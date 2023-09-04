@@ -258,6 +258,6 @@ export interface Dimension {
 }
 
 export type DataRow = Array<{
-  col: DatasetColumn | ColumnMetadata;
+  col: DatasetColumn | ColumnMetadata | null;
   value: RowValue;
 }>;

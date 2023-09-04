@@ -14,7 +14,11 @@ import {
   SAMPLE_DB_ID,
 } from "metabase-types/api/mocks/presets";
 import { createMockColumn } from "metabase-types/api/mocks";
-import type { DatasetColumn, RowValue } from "metabase-types/api";
+import type {
+  DatasetColumn,
+  RowValue,
+  StructuredDatasetQuery,
+} from "metabase-types/api";
 import type { StructuredQuery as StructuredQueryApi } from "metabase-types/api/query";
 import type {
   ColumnFilterDrillThruInfo,
@@ -436,6 +440,91 @@ describe("availableDrillThrus", () => {
           drills.map(drill => Lib.displayInfo(query, stageIndex, drill)),
         ).toEqual(expectedDrills);
       });
+    });
+
+    it("should return list of available drills for aggregated query with custom column", () => {
+      const question = Question.create({
+        databaseId: SAMPLE_DB_ID,
+        tableId: ORDERS_ID,
+        metadata: SAMPLE_METADATA,
+        dataset_query: {
+          database: SAMPLE_DB_ID,
+          type: "query",
+          query: {
+            "source-table": ORDERS_ID,
+            expressions: { CustomColumn: ["+", 1, 1] },
+            aggregation: [["count"]],
+            breakout: [
+              ["expression", "CustomColumn"],
+              [
+                "field",
+                ORDERS.CREATED_AT,
+                { "base-type": "type/DateTime", "temporal-unit": "month" },
+              ],
+            ],
+          },
+          parameters: [],
+        } as StructuredDatasetQuery,
+      });
+      const columns = {
+        Math: createMockColumn({
+          base_type: "type/Integer",
+          name: "Math",
+          display_name: "Math",
+          expression_name: "Math",
+          field_ref: ["expression", "Math"],
+          source: "breakout",
+          effective_type: "type/Integer",
+        }),
+        CREATED_AT: createOrdersCreatedAtDatasetColumn({
+          source: "breakout",
+          field_ref: [
+            "field",
+            ORDERS.CREATED_AT,
+            {
+              "base-type": "type/DateTime",
+              "temporal-unit": "month",
+            },
+          ],
+        }),
+        count: createMockColumn({
+          base_type: "type/BigInteger",
+          name: "count",
+          display_name: "Count",
+          semantic_type: "type/Quantity",
+          source: "aggregation",
+          field_ref: ["aggregation", 0],
+          effective_type: "type/BigInteger",
+        }),
+      };
+      const rowValues = {
+        Math: 2,
+        CREATED_AT: "2022-06-01T00:00:00+03:00",
+        count: 37,
+      };
+      const clickedColumnName = "count";
+
+      const { query, stageIndex, column, cellValue, row } = setup({
+        question,
+        clickedColumnName,
+        columns,
+        rowValues,
+      });
+
+      const dimensions = row
+        .filter(({ col }) => col?.name !== clickedColumnName)
+        .map(({ value, col }) => ({ value, column: col }));
+
+      const drills = availableDrillThrus(
+        query,
+        stageIndex,
+        column,
+        cellValue,
+        row,
+        dimensions,
+      );
+
+      expect(drills).toBeInstanceOf(Array);
     });
   });
 });

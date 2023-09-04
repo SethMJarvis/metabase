@@ -14,7 +14,7 @@ export interface DatasetColumn {
   id?: FieldId;
   name: string;
   display_name: string;
-  description: string | null;
+  description?: string | null;
   source: string;
   coercion_strategy?: string | null;
   visibility_type?: FieldVisibilityType;
