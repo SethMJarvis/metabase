@@ -37,14 +37,21 @@ export class Mode {
     const query = question._getMLv2Query();
     const stageIndex = -1;
 
-    const availableDrillThrus = Lib.availableDrillThrus(
-      query,
-      stageIndex,
-      clicked?.column,
-      clicked?.value,
-      clicked?.data,
-      clicked?.dimensions,
-    );
+    let availableDrillThrus: DrillThru[] = [];
+
+    // FIXME: this try catch is needed to mitigate Lib runtime error, it doesn't work properly with custom columns. Remove when this gets fixed
+    try {
+      availableDrillThrus = Lib.availableDrillThrus(
+        query,
+        stageIndex,
+        clicked?.column,
+        clicked?.value,
+        clicked?.data,
+        clicked?.dimensions,
+      );
+    } catch (e) {
+      console.error("error getting available drills from MLv2", e);
+    }
 
     const applyDrillAndGetNewQuestion = (drill: DrillThru, ...args: any[]) => {
       const query = question._getMLv2Query();
