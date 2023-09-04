@@ -1,6 +1,7 @@
 import {
   createOrdersIdDatasetColumn,
   createSampleDatabase,
+  ORDERS,
   ORDERS_ID,
   SAMPLE_DB_ID,
 } from "metabase-types/api/mocks/presets";
@@ -9,10 +10,8 @@ import { createMockMetadata } from "__support__/metadata";
 
 import { checkNotNull } from "metabase/core/utils/types";
 import type { ClickAction } from "metabase/visualizations/types";
-import * as Lib from "metabase-lib";
-import { toLegacyQuery } from "metabase-lib";
 import type { ClickObject } from "metabase-lib/queries/drills/types";
-import { columnFinder, SAMPLE_METADATA } from "metabase-lib/test-helpers";
+import { SAMPLE_METADATA } from "metabase-lib/test-helpers";
 import type StructuredQuery from "metabase-lib/queries/StructuredQuery";
 import Question from "metabase-lib/Question";
 
@@ -62,28 +61,26 @@ describe("Mode", function () {
       });
 
       it("should return SortDrill with opposite direction for sorted question", () => {
-        const question = Question.create({
+        const orderedQuestion = Question.create({
           databaseId: SAMPLE_DB_ID,
           tableId: ORDERS_ID,
           metadata: SAMPLE_METADATA,
+          dataset_query: {
+            database: SAMPLE_DB_ID,
+            type: "query",
+            query: {
+              "source-table": ORDERS_ID,
+              "order-by": [["asc", ["field", ORDERS.ID, null]]],
+            },
+          },
         });
-        const query = question._getMLv2Query();
-
-        const column = columnFinder(query, Lib.orderableColumns(query, -1))(
-          "ORDERS",
-          "ID",
-        );
-
-        const orderedQuery = Lib.orderBy(query, -1, column, "asc");
-        const legacy = toLegacyQuery(orderedQuery);
-        const orderedQuestion = question.setDatasetQuery(legacy);
 
         const actions = setup({
           question: orderedQuestion,
         });
 
         const sortAscDrill = getActionsByType(actions, "sort-ascending")[0];
-        expect(sortAscDrill).toBeNull();
+        expect(sortAscDrill).toBe(undefined);
 
         const sortDescDrill = getActionsByType(actions, "sort-descending")[0];
         expect(sortDescDrill).not.toBeNull();
