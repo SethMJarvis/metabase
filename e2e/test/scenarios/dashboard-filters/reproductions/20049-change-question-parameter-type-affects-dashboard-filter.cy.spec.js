@@ -41,7 +41,7 @@ const dashcardDetails = {
   size_y: 8,
 };
 
-describe.skip("issue 20049", () => {
+describe("issue 20049", () => {
   beforeEach(() => {
     restore();
     cy.signInAsAdmin();
